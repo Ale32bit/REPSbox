@@ -2,11 +2,12 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
@@ -15,35 +16,39 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="modules\command.lua" />
+    <None Remove="Lua\modules\command.lua" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="init.lua">
+    <Content Include="Lua\init.lua">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="json.lua">
+    <Content Include="Lua\json.lua">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="modules\command.lua">
+    <Content Include="Lua\modules\command.lua">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="modules\patch.lua">
+    <Content Include="Lua\modules\patch.lua">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="serpent.lua">
+    <Content Include="Lua\serpent.lua">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="KeraLua" Version="1.2.15" />
+    <PackageReference Include="KeraLua" Version="1.3.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="modules\command.lua">
+    <Resource Include="Lua\modules\command.lua">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Extensions\" />
   </ItemGroup>
 
 </Project>

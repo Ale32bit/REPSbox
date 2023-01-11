@@ -7,88 +7,90 @@ using KeraLua;
 using System.IO;
 using System.Runtime.Serialization;
 
-namespace REPSboxVM
+namespace REPSboxVM;
+
+class Runtime : IDisposable
 {
-    class Runtime : IDisposable
+    private Lua MainLua;
+    private Lua Lua;
+    public bool IsRunning = false;
+    public bool KillScript = false;
+    public Runtime()
     {
-        private Lua MainLua;
-        private Lua Lua;
-        public bool IsRunning = false;
-        public bool KillScript = false;
-        public Runtime()
+        KillScript = false;
+
+        MainLua = new Lua(false);
+
+        Sandbox.OpenLibraries(MainLua);
+        Sandbox.Patch(MainLua);
+
+        MainLua.PushString("REPSboxVM v2.0 - Powered by SwitchChat v3");
+        MainLua.SetGlobal("_HOST");
+
+        Lua = MainLua.NewThread();
+
+        Lua.SetHook((luaState, ar) =>
         {
-            KillScript = false;
+            var state = Lua.FromIntPtr(luaState);
 
-            MainLua = new Lua(true);
+            var arg = LuaDebug.FromIntPtr(ar);
 
-            MainLua.PushString("REPSboxVM v1.0 - Powered by SwitchChat");
-            MainLua.SetGlobal("_HOST");
-
-            Lua = MainLua.NewThread();
-
-            Lua.SetHook((luaState, ar) =>
+            if (arg.Event == LuaHookEvent.Count)
             {
-                var state = Lua.FromIntPtr(luaState);
-
-                var arg = LuaDebug.FromIntPtr(ar);
-
-                if (arg.Event == LuaHookEvent.Count)
+                if (KillScript)
                 {
-                    if (KillScript)
-                    {
-                        Lua.Error("Yield timeout exception");
-                    }
+                    Lua.Error("Yield timeout exception");
                 }
-            }, LuaHookMask.Count, 7000000);
-
-            var initContent = File.ReadAllText("init.lua");
-            var status = Lua.LoadString(initContent, "@INIT");
-            if (status != LuaStatus.OK)
-            {
-                var error = Lua.ToString(-1);
-                throw new LuaException(error);
             }
-            IsRunning = true;
-        }
+        }, LuaHookMask.Count, 7000000);
 
-        public void Run(string script)
+        var initContent = File.ReadAllText("Lua/init.lua");
+        var status = Lua.LoadString(initContent, "@INIT");
+        if (status != LuaStatus.OK)
         {
-            KillScript = false;
-            Lua.PushString(script);
-            var status = Lua.Resume(null, 1, out var nres);
-            if (status == LuaStatus.OK || status == LuaStatus.Yield)
-            {
-                Lua.Pop(nres);
-                if (status != LuaStatus.OK) return;
-                IsRunning = false;
-                throw new LuaException(Lua.ToString(-1));
-            }
-
-            IsRunning = false;
-            throw new LuaException(Lua.OptString(-1, "Unknown Error"));
+            var error = Lua.ToString(-1);
+            throw new LuaException(error);
         }
-
-        public void Dispose()
-        {
-            Console.WriteLine("Disposing...");
-            IsRunning = false;
-            MainLua.Dispose();
-        }
+        IsRunning = true;
     }
 
-    class LuaException : Exception
+    public void Run(string script)
     {
-        public LuaException()
+        KillScript = false;
+        Lua.PushString(script);
+        var status = Lua.Resume(null, 1, out var nres);
+        if (status == LuaStatus.OK || status == LuaStatus.Yield)
         {
+            Lua.Pop(nres);
+            if (status != LuaStatus.OK) return;
+            IsRunning = false;
+            throw new LuaException(Lua.ToString(-1));
         }
 
-        public LuaException(string message) : base(message)
-        {
-        }
-
-        public LuaException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
-
+        IsRunning = false;
+        throw new LuaException(Lua.OptString(-1, "Unknown Error"));
     }
+
+    public void Dispose()
+    {
+        Console.WriteLine("Disposing...");
+        IsRunning = false;
+        MainLua.Dispose();
+    }
+}
+
+class LuaException : Exception
+{
+    public LuaException()
+    {
+    }
+
+    public LuaException(string message) : base(message)
+    {
+    }
+
+    public LuaException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
+
 }

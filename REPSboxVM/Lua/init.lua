@@ -1,10 +1,12 @@
+-- todo: cleanup this old mess not needed anymore
+
 local modules = {
     "patch",
     "command"
 }
 
-local json = dofile("json.lua")
-local serpent = dofile("serpent.lua")
+local json = require("json")
+local serpent = require("serpent")
 
 local utils = {}
 
@@ -109,48 +111,23 @@ local tEnv = {
         end
         log(table.concat(args, " "), "out")
     end,
-    error = error,
-    tostring = tostring,
-    tonumber = tonumber,
-    ipairs = ipairs,
-    pairs = pairs,
-    bit = bit,
-    table = table,
-    next = next,
-    math = math,
-    string = string,
-    type = type,
-    unpack = unpack,
-    textutils = textutils,
-    select = select,
-    _VERSION = _VERSION,
-    _HOST = "REPSboxVM 1.0 - Powered by SwitchChat",
-    pcall = pcall,
-    xpcall = xpcall,
-    --getmetatable = getmetatable,
-    --setmetatable = setmetatable,
-    coroutine = coroutine
+    _ENV = _ENV,
 }
 
-tEnv.os = {
-    time = os.time,
-    clock = os.clock,
-    date = os.date
-}
-
-tEnv._ENV = tEnv
-tEnv._G = tEnv
+setmetatable(tEnv, {
+    __index = _G,
+})
 
 -- load modules
 
-for _, file in ipairs(modules) do
+--[[for _, file in ipairs(modules) do
     local func, err = loadfile("./modules/" .. file .. ".lua")
     if func then
         func(tEnv, utils)
     else
         log("WARNING: Failed to load module " .. file .. ": " .. err, "info")
     end
-end
+end]]
 
 math.randomseed(os.time())
 
@@ -158,6 +135,7 @@ while true do
     outputs = 0;
     outputValue = {}
     local script = coroutine.yield()
+    script = script or ""
 
     if script:sub(1, 1) == " " then
         script = script:sub(2)

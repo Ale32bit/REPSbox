@@ -5,7 +5,7 @@ local utils = args[2]
 
 local oldChar = string.char
 
-tEnv.string.char = function(...)
+string.char = function(...)
 	local out = ""
 	for k, v in ipairs({...}) do
 	    if utils.inArray(utils.illegalBytecode, n) then
@@ -17,4 +17,3 @@ tEnv.string.char = function(...)
     
     return out
 end
-
