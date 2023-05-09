@@ -1,16 +1,29 @@
-﻿using KeraLua;
+﻿// This file is part of Capy64 - https://github.com/Ale32bit/Capy64
+// Copyright 2023 Alessandro "AlexDevs" Proto
+//
+// Licensed under the Apache License, Version 2.0 (the "License").
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using KeraLua;
 using Microsoft.VisualBasic;
 using REPSboxVM.Extensions;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace REPSboxVM;
 
-public class Sandbox
+internal class Sandbox
 {
     public static string DataPath = "Lua";
     internal static void OpenLibraries(Lua L)
@@ -25,6 +38,8 @@ public class Sandbox
         L.OpenOS();
 
         L.OpenPackage();
+
+        L.SetTop(0);
     }
     internal static void Patch(Lua L)
     {
@@ -58,10 +73,11 @@ public class Sandbox
         L.PushString("config");
         L.PushString(packageConfig);
         L.SetTable(-4);
+        L.Pop(1);
 
         // delete 3 and 4 searchers
         L.PushString("searchers");
-        L.GetTable(-3);
+        L.GetTable(-2);
 
         L.PushNil();
         L.SetInteger(-2, 3);
@@ -72,7 +88,7 @@ public class Sandbox
         L.PushCFunction(L_Searcher);
         L.SetInteger(-2, 2);
 
-        L.Pop(L.GetTop());
+        L.Pop(2);
 
         // Replace loadfile with sandboxed one
         L.PushCFunction(L_Loadfile);
@@ -81,8 +97,6 @@ public class Sandbox
         // Replace dofile with sandboxed one
         L.PushCFunction(L_Dofile);
         L.SetGlobal("dofile");
-
-        L.Pop(L.GetTop());
 
         // yeet dangerous os functions
         L.GetGlobal("os");
@@ -107,10 +121,23 @@ public class Sandbox
         L.PushNil();
         L.SetTable(-3);
 
-        L.GetGlobal("debug");
-        L.PushString("debug");
-        L.PushCFunction(L_DebugDebug);
+        L.PushString("exit");
+        L.PushNil();
         L.SetTable(-3);
+
+        L.Pop(1);
+
+        // Patch debug.debug
+        L.GetGlobal("debug");
+
+        L.PushString("debug");
+        L.PushCFunction(L_Dummy);
+        L.SetTable(-3);
+    }
+
+    private static int L_Dummy(IntPtr state)
+    {
+        return 0;
     }
 
     internal static int L_Searcher(IntPtr state)
@@ -172,6 +199,9 @@ public class Sandbox
 
         var libname = L.CheckString(1);
         var searchpath = L.CheckString(2);
+
+        libname = libname.Replace('.', '/');
+
         var possiblePaths = searchpath
             .Split(';')
             .Select(p => p.Replace("?", libname));
@@ -236,7 +266,7 @@ public class Sandbox
 
         L.GetGlobal("load");
         L.PushBuffer(chunk);
-        L.PushString(filename);
+        L.PushString("@" + filename);
 
         var values = 2;
 
@@ -291,11 +321,6 @@ public class Sandbox
         return 0;
     }
 
-    internal static int L_DebugDebug(IntPtr state)
-    {
-        return 0;
-    }
-
     internal static void DumpStack(Lua state)
     {
         var n = state.GetTop();
@@ -331,4 +356,5 @@ public class Sandbox
 
         return resolvedPath;
     }
+
 }

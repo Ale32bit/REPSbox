@@ -1,56 +1,29 @@
-﻿using System;
-using System.Timers;
+﻿using Microsoft.Extensions.Configuration;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace REPSboxVM;
 
-class Program
+internal class Program
 {
-    public static string User;
-    private static Runtime Runtime;
-    private static Timer timer;
-    static void Main(string[] args)
+    public static ChatBot ChatBot { get; private set; }
+    public static IConfiguration Configuration { get; private set; }
+
+    private static void Main(string[] args)
     {
-        User = args[0];
-        timer = new Timer
-        {
-            AutoReset = false,
-            Enabled = false,
-            Interval = 5000,
-        };
-        timer.Elapsed += YieldTimeout;
-        try
-        {
-            Runtime = new Runtime();
+        var builder = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", false);
+        Configuration = builder.Build();
 
-            Runtime.Run("--");
+        ChatBot = new(Configuration);
 
-            Console.CancelKeyPress += new ConsoleCancelEventHandler(IntHandler);
-
-            while (Runtime.IsRunning)
-            {
-                var script = Console.ReadLine();
-                timer.Start();
-                Runtime.Run(script);
-                if (timer.Enabled)
-                {
-                    timer.Stop();
-                }
-            }
-        } catch(LuaException e)
-        {
-            Console.Error.WriteLine(e);
-        }
+        RunAsync().Wait();
     }
 
-    private static void YieldTimeout(Object source, ElapsedEventArgs e)
+    private static async Task RunAsync()
     {
-        Runtime.KillScript = true;
-    }
-
-    static void IntHandler(object sender, ConsoleCancelEventArgs args)
-    {
-        args.Cancel = true;
-        Runtime.Dispose();
-        Environment.Exit(0);
+        await ChatBot.RunAsync();
     }
 }
+

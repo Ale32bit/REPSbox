@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using KeraLua;
 using System.IO;
 using System.Runtime.Serialization;
+using System.Timers;
 
 namespace REPSboxVM;
 
@@ -15,9 +16,22 @@ class Runtime : IDisposable
     private Lua Lua;
     public bool IsRunning = false;
     public bool KillScript = false;
-    public Runtime()
+    public readonly Timer YieldTimer = new() {
+        AutoReset = false,
+        Enabled = false,
+        Interval = 1000,
+    };
+
+    public readonly string UUID;
+
+    private static readonly Dictionary<string, StringBuilder> Outputs = new();
+
+    public Runtime(string uuid)
     {
+        UUID = uuid;
         KillScript = false;
+
+        Outputs[UUID] = new();
 
         MainLua = new Lua(false);
 
@@ -26,6 +40,10 @@ class Runtime : IDisposable
 
         MainLua.PushString("REPSboxVM v2.0 - Powered by SwitchChat v3");
         MainLua.SetGlobal("_HOST");
+
+        MainLua.PushString(uuid);
+        MainLua.PushCClosure(L_PrintOutput, 1);
+        MainLua.SetGlobal("print");
 
         Lua = MainLua.NewThread();
 
@@ -43,6 +61,8 @@ class Runtime : IDisposable
                 }
             }
         }, LuaHookMask.Count, 7000000);
+
+        YieldTimer.Elapsed += YieldElapsed;
 
         var initContent = File.ReadAllText("Lua/init.lua");
         var status = Lua.LoadString(initContent, "@INIT");
@@ -71,11 +91,47 @@ class Runtime : IDisposable
         throw new LuaException(Lua.OptString(-1, "Unknown Error"));
     }
 
+    public string PopOutput()
+    {
+        var builder = Outputs[UUID];
+        var output = builder.ToString();
+        builder.Clear();
+        return output;
+    }
+
+    public void YieldElapsed(object source, ElapsedEventArgs e)
+    {
+        KillScript = true;
+    }
+
     public void Dispose()
     {
-        Console.WriteLine("Disposing...");
         IsRunning = false;
         MainLua.Dispose();
+        if (Outputs.ContainsKey(UUID))
+            Outputs.Remove(UUID);
+    }
+
+    private static int L_PrintOutput(IntPtr state)
+    {
+        var L = Lua.FromIntPtr(state);
+
+        var nargs = L.GetTop();
+
+        var uuidIndex = Lua.UpValueIndex(1);
+        var uuid = L.ToString(uuidIndex);
+
+        if (!Outputs.ContainsKey(uuid))
+            Outputs[uuid] = new();
+
+        var output = Outputs[uuid];
+
+        for (int i = 1; i <= nargs; i++)
+            output.Append(L.ToString(i));
+
+        output.AppendLine();
+
+        return 0;
     }
 }
 
