@@ -74,10 +74,10 @@ internal class ChatBot
 
     private Runtime GetOrCreateRuntime(string uuid)
     {
-        if (Runtimes.ContainsKey(uuid))
-            return Runtimes[uuid];
+        if (Runtimes.TryGetValue(uuid, out Runtime runtime))
+            return runtime;
 
-        var runtime = new Runtime(uuid);
+        runtime = new(uuid);
         runtime.Run(uuid);
 
         Runtimes[uuid] = runtime;
