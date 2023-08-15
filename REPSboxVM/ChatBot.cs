@@ -72,8 +72,8 @@ internal class ChatBot
             {
                 ev.Args = fullComand[1..].Split(' ');
                 _ = OnReplCommand(ev);
+                return;
             }
-            return;
         }
 
         if (replCommands.Contains(cmd))
