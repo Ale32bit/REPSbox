@@ -114,6 +114,12 @@ local tEnv = {
     _ENV = _ENV,
 }
 
+for k, v in pairs(math) do
+    if not _G[k] then
+        tEnv[k] = v
+    end
+end
+
 setmetatable(tEnv, {
     __index = _G,
 })
