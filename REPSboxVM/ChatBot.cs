@@ -62,6 +62,20 @@ internal class ChatBot
         var replCommands = _configuration.GetSection("ReplCommands").Get<string[]>();
         var vmCommands = _configuration.GetSection("VmCommands").Get<string[]>();
 
+        var doFunny = _configuration.GetValue("EnableTheFunny", false);
+
+        if (doFunny)
+        {
+            var singleArg = string.Join(' ', ev.Args);
+            var fullComand = cmd + singleArg;
+            if (fullComand.StartsWith('='))
+            {
+                ev.Args = fullComand[1..].Split(' ');
+                _ = OnReplCommand(ev);
+            }
+            return;
+        }
+
         if (replCommands.Contains(cmd))
         {
             _ = OnReplCommand(ev);
