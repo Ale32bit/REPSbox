@@ -156,7 +156,9 @@ internal class ChatBot
             message.AppendFormat("&f[&7{0}&f][&{1}{2}&f] {3}\n", i + 1, color, op.Type, op.Value ?? "nil");
         }
 
-        await Client.TellAsync(ev.User.Name, message.ToString());
+        var response = message.ToString();
+        response = response[0..Math.Min(response.Length, 1024)];
+        await Client.TellAsync(ev.User.Name, response);
     }
 
     private async Task OnVmCommand(ChatboxCommand ev)
