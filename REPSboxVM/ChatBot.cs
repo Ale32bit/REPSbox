@@ -67,7 +67,7 @@ internal class ChatBot
         if (doFunny)
         {
             var singleArg = string.Join(' ', ev.Args);
-            var fullComand = ev.Command + singleArg;
+            var fullComand = ev.Command + ' ' + singleArg;
             if (fullComand.StartsWith('='))
             {
                 ev.Args = fullComand[1..].Split(' ');
