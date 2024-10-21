@@ -35,8 +35,9 @@ internal class ChatBot
         _configuration = configuration;
         _token = configuration["ChatboxToken"];
 
-        Client = new Client(_token)
+        Client = new Client(_token, new Uri("wss://chat.reconnected.cc/v2/"))
         {
+            
             DefaultFormattingMode = SwitchChatNet.Enums.FormattingMode.Format,
             DefaultName = "&9Lua",
         };
