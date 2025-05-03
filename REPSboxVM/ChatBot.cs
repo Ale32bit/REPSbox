@@ -29,13 +29,15 @@ internal class ChatBot
     public readonly Dictionary<string, Runtime> Runtimes = new();
 
     private readonly string _token;
+    private readonly string _server;
     private readonly IConfiguration _configuration;
     public ChatBot(IConfiguration configuration)
     {
         _configuration = configuration;
         _token = configuration["ChatboxToken"];
+        _server = configuration["ChatboxServer"] ?? "wss://chat.reconnected.cc/v2/";
 
-        Client = new Client(_token, new Uri("wss://chat.reconnected.cc/v2/"))
+        Client = new Client(_token, new Uri(_server))
         {
             
             DefaultFormattingMode = SwitchChatNet.Enums.FormattingMode.Format,
